@@ -1,67 +1,152 @@
-.electricBorder {
+/*
+ * Source: BalintFerenczy / Codrops "Animated Electric Border" zip,
+ * src/style.css — ported VERBATIM. Only mechanical change: class
+ * names are camelCased so they go through CSS Modules. CSS variable
+ * names, structure, filter values and visual intent are unchanged.
+ */
+
+.cardContainer {
+  --electric-border-color: #dd8448;
   --electric-light-color: oklch(from var(--electric-border-color) l c h);
+  --gradient-color: oklch(from var(--electric-border-color) 0.3 calc(c / 2) h / 0.4);
+  --color-neutral-900: oklch(0.185 0 0);
+
+  padding: 2px;
+  border-radius: 24px;
   position: relative;
-  border-radius: inherit;
-  overflow: visible;
-  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  background:
+    linear-gradient(-30deg, var(--gradient-color), transparent, var(--gradient-color)),
+    linear-gradient(to bottom, var(--color-neutral-900), var(--color-neutral-900));
 }
 
-.ebCanvasContainer {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 2;
-}
-
-.ebCanvas {
-  display: block;
-}
-
-.ebContent {
+.innerContainer {
   position: relative;
-  border-radius: inherit;
-  z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
-.ebLayers {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.ebGlow1,
-.ebGlow2,
-.ebBackgroundGlow {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
+.borderOuter {
+  border: 2px solid rgba(221, 132, 72, 0.5);
+  border-radius: 24px;
+  padding-right: 4px;
+  padding-bottom: 4px;
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
 }
 
-.ebGlow1 {
-  border: 2px solid oklch(from var(--electric-border-color) l c h / 0.6);
+.mainCard {
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  border: 2px solid var(--electric-border-color);
+  margin-top: -4px;
+  margin-left: -4px;
+  filter: url(#turbulent-displace);
+  box-sizing: border-box;
+}
+
+.glowLayer1 {
+  border: 2px solid rgba(221, 132, 72, 0.6);
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   filter: blur(1px);
 }
 
-.ebGlow2 {
+.glowLayer2 {
   border: 2px solid var(--electric-light-color);
+  border-radius: 24px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   filter: blur(4px);
 }
 
-.ebBackgroundGlow {
-  z-index: -1;
+.overlay1 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  opacity: 1;
+  mix-blend-mode: overlay;
   transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg, white, transparent 30%, transparent 70%, white);
+  pointer-events: none;
+}
+
+.overlay2 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  transform: scale(1.1);
+  filter: blur(16px);
+  background: linear-gradient(-30deg, white, transparent 30%, transparent 70%, white);
+  pointer-events: none;
+}
+
+.backgroundGlow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 24px;
   filter: blur(32px);
+  transform: scale(1.1);
   opacity: 0.3;
+  z-index: -1;
   background: linear-gradient(
     -30deg,
     var(--electric-light-color),
     transparent,
     var(--electric-border-color)
   );
+  pointer-events: none;
+}
+
+.contentContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.svgContainer {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }

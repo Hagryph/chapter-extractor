@@ -1,24 +1,24 @@
+/*
+ * Window-level layout. The Electron window is transparent + frameless;
+ * the visual "app" is the rounded card centred inside, with margin all
+ * around for the SVG-displaced electric traces to wander into. That
+ * margin is desktop bleed (transparent), matching the CodePen demo
+ * where the card sits on a dark page backdrop.
+ */
+
 .shell {
   position: fixed;
   inset: 0;
-  border-radius: var(--radius-window);
-  background: var(--color-bg-root);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   -webkit-app-region: drag;
 }
 
-.borderHost {
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-window);
-  pointer-events: none;
-}
-
-.content {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  border-radius: var(--radius-window);
-  pointer-events: auto;
+.cardSlot {
+  position: relative;
+  width: calc(100% - 96px);
+  height: calc(100% - 96px);
+  -webkit-app-region: no-drag;
 }
