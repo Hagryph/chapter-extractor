@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from typing import Protocol
 
 from PySide6.QtCore import QObject, Signal
@@ -50,4 +51,8 @@ class WindowManager(QObject):
 
     def _on_destroyed(self, chapter_id: int) -> None:
         self._windows.pop(chapter_id, None)
-        self.window_closed.emit(chapter_id)
+        # During app teardown the manager itself may be deleted before its
+        # tracked windows. shiboken raises RuntimeError on emit if so —
+        # silently ignore since there's nothing meaningful to notify.
+        with contextlib.suppress(RuntimeError):
+            self.window_closed.emit(chapter_id)
