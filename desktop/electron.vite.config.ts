@@ -12,6 +12,10 @@ export default defineConfig({
         '@renderer': resolve('src/renderer/src')
       }
     },
+    // .glb is a binary asset Vite doesn't recognise by default.
+    // We serve it from public/ at /models/petal.glb so this also
+    // covers any future imports.
+    assetsInclude: ['**/*.glb'],
     plugins: [react(), tailwindcss()]
   }
 })

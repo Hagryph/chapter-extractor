@@ -1,15 +1,19 @@
-import { TitleBar } from './components/TitleBar'
+import { ElectricBorder } from './components/ElectricBorder/ElectricBorder'
 
-/**
- * Empty canvas — Step 1 of the rebuild. Just the chrome (frameless
- * window with Mac-style traffic lights and an Obsidian-dark backdrop).
- * Subsequent PRs add the splash, sidebar, list, reader.
- */
+import styles from './App.module.css'
+
 export default function App(): React.JSX.Element {
   return (
-    <div className="h-screen w-screen flex flex-col">
-      <TitleBar />
-      <main className="flex-1" />
+    <div className={styles.shell}>
+      <ElectricBorder
+        color="#c9a96e"
+        speed={1}
+        chaos={0.5}
+        borderRadius={18}
+        className={styles.borderHost}
+      >
+        <div className={styles.content} />
+      </ElectricBorder>
     </div>
   )
 }

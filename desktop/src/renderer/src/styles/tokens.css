@@ -1,0 +1,11 @@
+:root {
+  --color-bg-root: #090909;
+  --color-bg-surface: #0e0e0f;
+  --color-text-primary: #ddd9d0;
+  --color-text-secondary: #888888;
+  --color-accent: #c9a96e;
+
+  --radius-window: 18px;
+
+  --drag-region-height: 36px;
+}

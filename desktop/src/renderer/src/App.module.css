@@ -1,0 +1,24 @@
+.shell {
+  position: fixed;
+  inset: 0;
+  border-radius: var(--radius-window);
+  background: var(--color-bg-root);
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.borderHost {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-window);
+  pointer-events: none;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-window);
+  pointer-events: auto;
+}
