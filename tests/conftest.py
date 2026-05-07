@@ -1,0 +1,28 @@
+from __future__ import annotations
+
+from collections.abc import Iterator
+
+import pytest
+from sqlalchemy import Engine
+
+from chapter_extractor.services.db.engine import SqliteEngineFactory
+from chapter_extractor.services.db.migrator import (
+    project_migrator,
+    registry_migrator,
+)
+
+
+@pytest.fixture
+def project_engine() -> Iterator[Engine]:
+    engine = SqliteEngineFactory.in_memory()
+    project_migrator().apply_all(engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture
+def registry_engine() -> Iterator[Engine]:
+    engine = SqliteEngineFactory.in_memory()
+    registry_migrator().apply_all(engine)
+    yield engine
+    engine.dispose()
