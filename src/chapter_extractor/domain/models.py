@@ -123,6 +123,15 @@ class Project:
         return self.root_path / ".chapter_extractor"
 
 
+@dataclass
+class AppSettings:
+    """App-wide settings (singleton row in registry.db)."""
+
+    theme_mode: ThemeMode = ThemeMode.AUTO
+    last_project_id: int | None = None
+    soft_delete_retention_days: int = 7
+
+
 @dataclass(frozen=True, slots=True)
 class ProjectSummary:
     """Item in the registry's recent-projects view."""

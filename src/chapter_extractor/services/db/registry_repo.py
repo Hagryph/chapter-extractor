@@ -5,7 +5,8 @@ from datetime import datetime
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
-from chapter_extractor.domain.models import Project, ProjectSummary
+from chapter_extractor.domain.enums import ThemeMode
+from chapter_extractor.domain.models import AppSettings, Project, ProjectSummary
 from chapter_extractor.services.db.mappers import DateTimeCodec, ProjectSummaryMapper
 from chapter_extractor.services.db.tables_registry import AppSettingsRow, ProjectRow
 
@@ -75,3 +76,30 @@ class SqlAlchemyRegistry:
             if row is None:
                 raise KeyError(f"Project id {project_id} not found")
             row.pinned = 1 if pinned else 0
+
+    # ─── App-wide settings (singleton row) ──────────────────────────
+
+    def get_app_settings(self) -> AppSettings:
+        with Session(self._engine) as session:
+            row = session.get(AppSettingsRow, 1)
+            if row is None:
+                raise RuntimeError("app_settings singleton row missing")
+            try:
+                theme = ThemeMode(row.theme_mode)
+            except ValueError:
+                theme = ThemeMode.AUTO
+            return AppSettings(
+                theme_mode=theme,
+                last_project_id=row.last_project_id,
+                soft_delete_retention_days=row.soft_delete_retention_days,
+            )
+
+    def update_app_settings(self, settings: AppSettings) -> AppSettings:
+        with Session(self._engine) as session, session.begin():
+            row = session.get(AppSettingsRow, 1)
+            if row is None:
+                raise RuntimeError("app_settings singleton row missing")
+            row.theme_mode = settings.theme_mode.value
+            row.last_project_id = settings.last_project_id
+            row.soft_delete_retention_days = settings.soft_delete_retention_days
+        return settings

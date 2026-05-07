@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from chapter_extractor.domain.enums import ThemeMode
 from chapter_extractor.domain.models import (
+    AppSettings,
     Chapter,
     ChapterSummary,
     ChapterVersion,
@@ -69,3 +71,19 @@ class IRegistry(Protocol):
     def list_projects(self) -> list[ProjectSummary]: ...
     def touch_last_opened(self, project_id: int) -> None: ...
     def set_pinned(self, project_id: int, pinned: bool) -> None: ...
+
+    def get_app_settings(self) -> AppSettings: ...
+    def update_app_settings(self, settings: AppSettings) -> AppSettings: ...
+
+
+# ─── Infrastructure ───────────────────────────────────────────────
+
+
+@runtime_checkable
+class IClipboard(Protocol):
+    def copy(self, text: str) -> None: ...
+
+
+@runtime_checkable
+class IThemeManager(Protocol):
+    def apply(self, mode: ThemeMode) -> None: ...
