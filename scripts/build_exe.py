@@ -95,7 +95,7 @@ class ExeBuilder:
         self._validate()
         self._paths.output_dir.mkdir(parents=True, exist_ok=True)
         argv = self._command.build_argv()
-        print("→ " + " ".join(str(a) for a in argv) + "\n")
+        print("> " + " ".join(str(a) for a in argv) + "\n")
         return subprocess.call(argv, cwd=str(self._paths.repo_root))
 
     def _validate(self) -> None:
