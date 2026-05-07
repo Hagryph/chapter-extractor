@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QSettings, QSize, Qt
-from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import QMainWindow, QSplitter, QStackedWidget, QWidget
 
 from chapter_extractor.domain.enums import ViewMode
@@ -11,8 +10,10 @@ from chapter_extractor.infrastructure.window_manager import WindowManager
 from chapter_extractor.viewmodels.main_vm import MainViewModel
 from chapter_extractor.views.chapter_list_pane import ChapterListPane
 from chapter_extractor.views.dialogs.batch_input_dialog import BatchInputDialog
+from chapter_extractor.views.dialogs.shortcuts_dialog import ShortcutsDialog
 from chapter_extractor.views.dialogs.trash_dialog import TrashDialog
 from chapter_extractor.views.empty_state import EmptyStateWidget
+from chapter_extractor.views.menu_builder import MenuBuilder
 from chapter_extractor.views.reader_pane import ReaderPane
 from chapter_extractor.views.reader_window import ChapterReaderWindow
 from chapter_extractor.views.sidebar import Sidebar
@@ -58,7 +59,8 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(QSize(900, 560))
 
         self._build_ui()
-        self._build_actions()
+        self._build_menu_and_actions()
+        self._build_status_bar()
 
         # Window manager held only while a project is open. Built lazily on
         # the first project_changed (so we can pass the right repo).
@@ -104,45 +106,30 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self._splitter)
 
-    def _build_actions(self) -> None:
-        # Per Qt for Python guidance, QAction is the recommended way for
-        # app-wide shortcuts. Each action is a child of self (the main window)
-        # so it stays alive for the window's lifetime.
+    def _build_menu_and_actions(self) -> None:
+        # Single source of truth for shortcut→handler wiring. MenuBuilder
+        # reads ShortcutCatalog and assembles File / Edit / View / Tools / Help
+        # menus with proper QActions (per Qt-for-Python guidance: QAction is
+        # the recommended way for app-wide shortcuts).
+        handlers = {
+            "file.add_chapters": self.open_batch_input,
+            "file.quit": self.close,
+            "edit.copy_chapter": self._copy_current,
+            "view.cycle_focus": self._cycle_view_mode,
+            "view.distraction_free": self._toggle_distraction_free,
+            "view.exit_modes": self._exit_view_modes,
+            "view.pop_out": self._pop_out_current,
+            "tools.trash": self.open_trash,
+            "help.shortcuts": self.open_shortcuts_dialog,
+        }
+        self._menu_builder = MenuBuilder(self, handlers)
+        self._menu_builder.build()
 
-        self._act_batch = QAction("Add Chapters…", self)
-        self._act_batch.setShortcut(QKeySequence("Ctrl+B"))
-        self._act_batch.triggered.connect(self.open_batch_input)
-        self.addAction(self._act_batch)
-
-        self._act_trash = QAction("Trash…", self)
-        self._act_trash.setShortcut(QKeySequence("Ctrl+Shift+T"))
-        self._act_trash.triggered.connect(self.open_trash)
-        self.addAction(self._act_trash)
-
-        self._act_focus = QAction("Toggle Focus Mode", self)
-        self._act_focus.setShortcut(QKeySequence(Qt.Key.Key_F11))
-        self._act_focus.triggered.connect(self._cycle_view_mode)
-        self.addAction(self._act_focus)
-
-        self._act_distraction = QAction("Toggle Distraction-Free", self)
-        self._act_distraction.setShortcut(QKeySequence("Ctrl+."))
-        self._act_distraction.triggered.connect(self._toggle_distraction_free)
-        self.addAction(self._act_distraction)
-
-        self._act_exit_modes = QAction("Exit View Mode", self)
-        self._act_exit_modes.setShortcut(QKeySequence(Qt.Key.Key_Escape))
-        self._act_exit_modes.triggered.connect(self._exit_view_modes)
-        self.addAction(self._act_exit_modes)
-
-        self._act_pop_out = QAction("Pop Out Reader", self)
-        self._act_pop_out.setShortcut(QKeySequence("Ctrl+Shift+O"))
-        self._act_pop_out.triggered.connect(self._pop_out_current)
-        self.addAction(self._act_pop_out)
-
-        self._act_copy = QAction("Copy Chapter", self)
-        self._act_copy.setShortcut(QKeySequence("Ctrl+Shift+C"))
-        self._act_copy.triggered.connect(self._copy_current)
-        self.addAction(self._act_copy)
+    def _build_status_bar(self) -> None:
+        # statusBar() lazily creates a QStatusBar. Qt automatically routes
+        # QAction.statusTip() text here on hover — gives users a passive
+        # description of every shortcut as they explore the menus.
+        self.statusBar().showMessage("Ready")
 
     def _wire_signals(self) -> None:
         self._vm.project_changed.connect(self._on_project_changed)
@@ -200,16 +187,21 @@ class MainWindow(QMainWindow):
 
     def open_batch_input(self) -> None:
         if self._vm.batch_input_vm is None:
+            self.statusBar().showMessage("Open a project before adding chapters.", 3000)
             return
         dialog = BatchInputDialog(self._vm.batch_input_vm, parent=self)
         dialog.exec()
 
     def open_trash(self) -> None:
         if self._vm.trash_vm is None:
+            self.statusBar().showMessage("Open a project before viewing trash.", 3000)
             return
         retention = self._vm.current_project.settings.soft_delete_retention_days if self._vm.current_project else 7
         dialog = TrashDialog(self._vm.trash_vm, retention_days=retention, parent=self)
         dialog.exec()
+
+    def open_shortcuts_dialog(self) -> None:
+        ShortcutsDialog(parent=self).exec()
 
     # ─── View-mode handling ────────────────────────────────────
 

@@ -11,15 +11,25 @@ dependencies = [
     "SQLAlchemy>=2.0",
     "platformdirs>=4.0",
     "PySide6>=6.7",
-    "pyqtdarktheme>=2.1",
 ]
 
 [project.optional-dependencies]
+# pyqtdarktheme not yet on PyPI for Python 3.14; theme.py falls back to a
+# bundled QSS stylesheet when the import fails. Install manually on 3.13:
+#   pip install "chapter-extractor[theme]"
+theme = ["pyqtdarktheme>=2.1"]
 dev = [
     "pytest>=8",
     "pytest-qt>=4.4",
     "ruff>=0.6",
+    "nuitka>=2.4",
+    "zstandard>=0.22",
+    "ordered-set",
+    "pillow>=10",  # icon generation in CI / regen scripts
 ]
+
+[project.gui-scripts]
+chapter-extractor = "chapter_extractor.views.application:main"
 
 [project.scripts]
 chapter-extractor = "chapter_extractor.__main__:main"

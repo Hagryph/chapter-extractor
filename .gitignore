@@ -28,3 +28,12 @@ Thumbs.db
 
 # App runtime data (must never be committed)
 /.chapter_extractor_dev_data/
+
+# Build artifacts (Nuitka / PyInstaller)
+/dist/
+/build/
+*.spec
+*.build/
+*.dist/
+*.onefile-build/
+__main__.bin
