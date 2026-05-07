@@ -1,19 +1,71 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Protocol, runtime_checkable
 
-from chapter_extractor.domain.models import ParseResult
+from chapter_extractor.domain.models import (
+    Chapter,
+    ChapterSummary,
+    ChapterVersion,
+    ParseResult,
+    Project,
+    ProjectSummary,
+    SearchHit,
+)
+
+# ─── Parser ────────────────────────────────────────────────────────
 
 
 @runtime_checkable
 class IParser(Protocol):
-    """Anything that turns raw batch text into a ParseResult."""
-
     def parse(self, raw: str) -> ParseResult: ...
 
 
 @runtime_checkable
 class ISlugifier(Protocol):
-    """Filesystem-safe slug generator for titles."""
-
     def slugify(self, text: str) -> str: ...
+
+
+# ─── DB layer ──────────────────────────────────────────────────────
+
+
+@runtime_checkable
+class IChapterRepository(Protocol):
+    """Repository for chapters within a single project DB."""
+
+    def add(self, chapter: Chapter) -> Chapter: ...
+    def add_many(self, chapters: list[Chapter]) -> list[Chapter]: ...
+    def get_by_number(self, number: int) -> Chapter | None: ...
+    def get_by_id(self, chapter_id: int) -> Chapter | None: ...
+    def update_content(self, chapter_id: int, title: str, content: str) -> Chapter: ...
+    def list_summaries(self) -> list[ChapterSummary]: ...
+    def list_trash(self) -> list[ChapterSummary]: ...
+
+    def soft_delete(self, chapter_id: int) -> None: ...
+    def restore(self, chapter_id: int) -> Chapter: ...
+    def purge_expired(self, retention_days: int) -> int: ...
+
+    def list_versions(self, chapter_id: int) -> list[ChapterVersion]: ...
+    def restore_version(self, version_id: int) -> Chapter: ...
+
+    def search(self, query: str, limit: int = 50) -> list[SearchHit]: ...
+
+
+@runtime_checkable
+class IProjectRepository(Protocol):
+    """Repository for the project_meta singleton inside a project DB."""
+
+    def create(self, project: Project) -> Project: ...
+    def load(self, root_path: Path) -> Project: ...
+    def update_settings(self, project: Project) -> Project: ...
+
+
+@runtime_checkable
+class IRegistry(Protocol):
+    """App-wide registry of known projects + app settings."""
+
+    def register(self, project: Project) -> ProjectSummary: ...
+    def unregister(self, project_id: int) -> None: ...
+    def list_projects(self) -> list[ProjectSummary]: ...
+    def touch_last_opened(self, project_id: int) -> None: ...
+    def set_pinned(self, project_id: int, pinned: bool) -> None: ...
