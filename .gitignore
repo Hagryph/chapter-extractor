@@ -38,3 +38,13 @@ Thumbs.db
 *.onefile-build/
 __main__.bin
 nuitka-crash-report.xml
+
+# Electron app (desktop/) — node + build outputs
+desktop/node_modules/
+desktop/out/
+desktop/dist/
+desktop/build/
+desktop/release/
+desktop/.eslintcache
+desktop/.vite/
+desktop/.turbo/
