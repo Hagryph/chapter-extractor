@@ -30,16 +30,20 @@ class PaletteFactory:
     @classmethod
     def dark(cls) -> ThemeTokens:
         colors = ColorTokens(
-            # Black with a hint of blue (Arc-style). Surfaces step up by ~8% L.
-            bg_base="#0B0C10",
-            bg_surface_1="#13141A",
-            bg_surface_2="#1B1D26",
-            bg_surface_3="#252834",
-            bg_overlay="#2A2D3A",
-            text_primary="#F1F2F5",
-            text_secondary="#9094A0",
-            text_tertiary="#5A5E6B",
-            text_inverse="#0B0C10",
+            # Step 1 of the rebuild — single near-black canvas. Tones a hair
+            # warmer than pure #000 so it reads as fabric, not a void.
+            # All surface levels collapse to bg_base for now; we'll separate
+            # them again when we add the sidebar / reader as their own
+            # element in a follow-up step.
+            bg_base="#0A0A0A",
+            bg_surface_1="#0A0A0A",
+            bg_surface_2="#0A0A0A",
+            bg_surface_3="#0A0A0A",
+            bg_overlay="#111111",
+            text_primary="#EDEDED",
+            text_secondary="#7A7A7A",
+            text_tertiary="#4A4A4A",
+            text_inverse="#0A0A0A",
             border="rgba(255, 255, 255, 0.05)",
             border_strong="rgba(255, 255, 255, 0.12)",
             accent=cls._ACCENT,

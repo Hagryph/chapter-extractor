@@ -77,6 +77,24 @@ class MainWindow(QMainWindow):
         self._wire_signals()
         self._restore_state()
 
+    # ─── Blank-canvas mode ─────────────────────────────────────
+
+    def enter_blank_canvas_mode(self) -> None:
+        """Step 1 of the rebuild: collapse the entire window down to a
+        single dark canvas. Menu, status, splitter, panes — all hidden.
+
+        Used while we re-introduce visual elements one at a time so we
+        can validate the foundation in isolation.
+        """
+        self.menuBar().hide()
+        self.statusBar().hide()
+        # Replace the splitter as central widget with a plain empty QWidget.
+        # The splitter stays alive in self._splitter for tests; it just
+        # isn't shown.
+        empty = QWidget()
+        empty.setObjectName("blankCanvas")
+        self.setCentralWidget(empty)
+
     # ─── UI build ───────────────────────────────────────────────
 
     def _build_ui(self) -> None:

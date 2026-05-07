@@ -38,6 +38,11 @@ class Application:
         self._theme.apply_current()
         self._vm = MainViewModel(self._ctx)
         self._window = MainWindow(self._ctx, self._vm)
+        # Blank-canvas mode: hide menu, status, panes — show only the dark
+        # window. We're rebuilding the UI element-by-element with the user;
+        # this is step 1 (foundation). Comment out this call to restore
+        # the full chrome.
+        self._window.enter_blank_canvas_mode()
         self._window.show()
         try:
             return self._qapp.exec()

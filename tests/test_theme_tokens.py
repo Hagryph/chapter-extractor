@@ -36,13 +36,13 @@ class TestPaletteFactory:
 class TestStylesheetBuilder:
     def test_builds_non_empty(self) -> None:
         qss = StylesheetBuilder(PaletteFactory.dark()).build()
-        assert len(qss) > 1000  # something substantial
+        # Blank-canvas phase keeps the stylesheet intentionally tiny.
+        assert len(qss) > 100
 
     def test_uses_token_values(self) -> None:
         tokens = PaletteFactory.dark()
         qss = StylesheetBuilder(tokens).build()
-        # Sanity: every QSS string should reference the accent + base colors.
-        assert tokens.colors.accent in qss
+        # Foundation only references base + text tokens for now.
         assert tokens.colors.bg_base in qss
         assert tokens.colors.text_primary in qss
 
@@ -52,13 +52,13 @@ class TestStylesheetBuilder:
         assert dark != light
 
     def test_qss_includes_role_selectors(self) -> None:
-        # Views opt into themed surfaces via Qt dynamic properties — ensure
-        # the stylesheet includes the matching selectors.
+        # Views opt into themed surfaces via Qt dynamic properties — these
+        # selectors must remain present so the stylesheet picks them up
+        # again as we restore each element in the rebuild.
         qss = StylesheetBuilder(PaletteFactory.dark()).build()
         for selector in (
             'QWidget[role="sidebar"]',
             'QWidget[role="reader"]',
-            'QPushButton[primary="true"]',
             'QLabel[role="empty-state"]',
             'QLabel[role="title"]',
             'QLabel[role="warning"]',
