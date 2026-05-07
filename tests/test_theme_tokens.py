@@ -58,8 +58,9 @@ class TestStylesheetBuilder:
         for selector in (
             'QWidget[role="sidebar"]',
             'QWidget[role="reader"]',
-            'QWidget[role="titlebar"]',
             'QPushButton[primary="true"]',
             'QLabel[role="empty-state"]',
+            'QLabel[role="title"]',
+            'QLabel[role="warning"]',
         ):
             assert selector in qss, f"missing selector: {selector}"

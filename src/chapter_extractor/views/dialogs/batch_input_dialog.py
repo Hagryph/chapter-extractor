@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QLabel,
     QListWidget,
     QPlainTextEdit,
@@ -34,7 +35,8 @@ class BatchInputDialog(QDialog):
         self._vm = vm
         self.setWindowTitle("Add Chapters")
         self.setModal(True)
-        self.resize(900, 620)
+        self.resize(1040, 720)
+        self.setMinimumSize(900, 600)
 
         self._debounce = QTimer(self)
         self._debounce.setSingleShot(True)
@@ -73,6 +75,7 @@ class BatchInputDialog(QDialog):
         self._editor.setPlaceholderText(
             "Chapter 51: Ais Wallenstein\n…body…\n\n. . .\n\nChapter 52: …"
         )
+        self._editor.setFrameShape(QFrame.Shape.NoFrame)
         # Monospace font helps users line up structure.
         font = self._editor.font()
         font.setFamily("Consolas, Menlo, monospace")
@@ -88,10 +91,11 @@ class BatchInputDialog(QDialog):
         self._summary_label = QLabel("No chapters detected.")
         right_layout.addWidget(self._summary_label)
         self._preview_list = QListWidget()
+        self._preview_list.setFrameShape(QFrame.Shape.NoFrame)
         right_layout.addWidget(self._preview_list, stretch=1)
         self._warnings_label = QLabel("")
         self._warnings_label.setWordWrap(True)
-        self._warnings_label.setStyleSheet("color: #d97706;")  # amber for warnings
+        self._warnings_label.setProperty("role", "warning")
         right_layout.addWidget(self._warnings_label)
         splitter.addWidget(right)
 
@@ -102,11 +106,13 @@ class BatchInputDialog(QDialog):
         self._buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        self._buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Add Chapters")
-        self._buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
+        ok_btn = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
+        ok_btn.setText("Add Chapters")
+        ok_btn.setProperty("primary", True)
+        ok_btn.setEnabled(False)
         self._buttons.accepted.connect(self._on_accept)
         self._buttons.rejected.connect(self.reject)
-        outer.addWidget(self._buttons)
+        outer.addWidget(self._buttons, alignment=Qt.AlignmentFlag.AlignRight)
 
     def _wire_signals(self) -> None:
         self._editor.textChanged.connect(self._schedule_preview)

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QModelIndex
+from PySide6.QtCore import QModelIndex, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QFrame,
     QLabel,
     QListView,
     QPushButton,
@@ -18,14 +19,22 @@ from chapter_extractor.views.widgets.search_box import SearchBox
 class ChapterListPane(QWidget):
     """Centre pane: search box + chapter list + footer.
 
+    Emits ``add_chapters_requested`` when the user clicks the primary button
+    so the parent (MainWindow) opens the batch dialog. We use a Qt signal
+    rather than walking up the parent chain because ``parentWidget()`` here
+    returns the QStackedWidget hosting us, not MainWindow.
+
     The QListView is bound to the proxy model from ChapterListViewModel.
     Selection changes propagate via the selection model's currentChanged
     signal to ``vm.select_by_proxy_row``. Per Qt docs we hold a ref to the
     selection model as an instance attribute to avoid GC of the proxy.
     """
 
+    add_chapters_requested = Signal()
+
     def __init__(self, vm: ChapterListViewModel) -> None:
         super().__init__()
+        self.setProperty("role", "pane")
         self._vm = vm
         self._build_ui()
         self._wire_signals()
@@ -39,7 +48,11 @@ class ChapterListPane(QWidget):
             ViewStyle.PANE_PADDING,
             ViewStyle.PANE_PADDING,
         )
-        outer.setSpacing(ViewStyle.GRID)
+        outer.setSpacing(ViewStyle.GRID + 4)
+
+        title = QLabel("Chapters")
+        title.setProperty("role", "title")
+        outer.addWidget(title)
 
         self._search = SearchBox()
         outer.addWidget(self._search)
@@ -48,7 +61,9 @@ class ChapterListPane(QWidget):
         self._list.setModel(self._vm.proxy_model)
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._list.setUniformItemSizes(True)
-        self._list.setAlternatingRowColors(True)
+        # Remove the QFrame inner border — QSS alone isn't enough; the QFrame
+        # default frame shape draws a 1px border on top of our styling.
+        self._list.setFrameShape(QFrame.Shape.NoFrame)
         outer.addWidget(self._list, stretch=1)
 
         # Strong ref to the selection model: per
@@ -58,7 +73,7 @@ class ChapterListPane(QWidget):
 
         self._add_btn = QPushButton("+ Add Chapters")
         self._add_btn.setProperty("primary", True)
-        self._add_btn.clicked.connect(self._on_add_clicked)
+        self._add_btn.clicked.connect(self.add_chapters_requested.emit)
         outer.addWidget(self._add_btn)
 
         self._count_label = QLabel("0 chapters")
@@ -92,13 +107,6 @@ class ChapterListPane(QWidget):
         self._selection_model.clearCurrentIndex()
         self._update_count()
 
-    def _on_add_clicked(self) -> None:
-        # Real dialog ships in PR 6 (BatchInputDialog). For now we surface
-        # the placeholder via the parent's request handler.
-        parent = self.parentWidget()
-        if hasattr(parent, "request_batch_input"):
-            parent.request_batch_input()
-
     def _update_count(self, *_: object) -> None:
         n = self._vm.proxy_model.rowCount()
         self._count_label.setText(f"{n} chapter{'s' if n != 1 else ''}")
@@ -112,3 +120,7 @@ class ChapterListPane(QWidget):
     @property
     def search_box(self) -> SearchBox:
         return self._search
+
+    @property
+    def add_button(self) -> QPushButton:
+        return self._add_btn

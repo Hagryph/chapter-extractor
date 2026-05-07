@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import QSettings, QSize, Qt
-from PySide6.QtWidgets import QSplitter, QStackedWidget, QWidget
-from qframelesswindow import FramelessMainWindow
+from PySide6.QtWidgets import QMainWindow, QSplitter, QStackedWidget, QWidget
 
 from chapter_extractor.domain.enums import ViewMode
 from chapter_extractor.domain.models import Project
@@ -21,7 +18,6 @@ from chapter_extractor.views.reader_pane import ReaderPane
 from chapter_extractor.views.reader_window import ChapterReaderWindow
 from chapter_extractor.views.sidebar import Sidebar
 from chapter_extractor.views.style import ViewStyle
-from chapter_extractor.views.widgets.app_titlebar import AppTitleBar
 
 
 class _ReaderWindowFactory:
@@ -43,14 +39,13 @@ class _ReaderWindowFactory:
         return ChapterReaderWindow(chapter_id, repo, ctx.clipboard)
 
 
-class MainWindow(FramelessMainWindow):
+class MainWindow(QMainWindow):
     """Top-level application window — three-pane master-detail with focus
     modes, pop-out windows, batch input, and trash dialogs.
 
-    Frameless via ``qframelesswindow.FramelessMainWindow`` so we ship a
-    custom titlebar (AppTitleBar) alongside the menu bar. Native window
-    behaviours (drag, resize, snap layout on Win11, double-click maximize)
-    stay intact via the library's win32 hooks.
+    Native QMainWindow chrome — close/minimize/maximize and window dragging
+    are owned by the OS, which gets edge cases (Win11 snap layouts,
+    multi-monitor DPI, AltGr behaviour) right without us writing win32 code.
 
     Persistence: window geometry, window state, and splitter sizes are
     restored from QSettings on construction and saved on closeEvent.
@@ -59,21 +54,17 @@ class MainWindow(FramelessMainWindow):
     SETTINGS_ORG = "Hagryph"
     SETTINGS_APP = "ChapterExtractor"
 
+    DEFAULT_SIZE = QSize(1380, 860)
+    MINIMUM_SIZE = QSize(1200, 720)
+
     def __init__(self, ctx: AppContext, vm: MainViewModel) -> None:
         super().__init__()
         self._ctx = ctx
         self._vm = vm
         self._settings = QSettings(self.SETTINGS_ORG, self.SETTINGS_APP)
         self.setWindowTitle("Chapter Extractor")
-        self.setMinimumSize(QSize(900, 560))
-
-        # Custom titlebar — must be set before _build_ui so the menu bar
-        # lands beneath it.
-        repo_root = Path(__file__).resolve().parents[3]
-        icon_path = repo_root / "assets" / "app.ico"
-        self._titlebar = AppTitleBar(self, str(icon_path) if icon_path.exists() else None)
-        self._titlebar.set_title("Chapter Extractor")
-        self.setTitleBar(self._titlebar)
+        self.setMinimumSize(self.MINIMUM_SIZE)
+        self.resize(self.DEFAULT_SIZE)
 
         self._build_ui()
         self._build_menu_and_actions()
@@ -161,7 +152,6 @@ class MainWindow(FramelessMainWindow):
             self._centre_stack.setCurrentWidget(self._centre_empty)
             self._reader_stack.setCurrentWidget(self._reader_empty)
             self.setWindowTitle("Chapter Extractor")
-            self._titlebar.set_title("Chapter Extractor")
             self._window_manager = None
             return
 
@@ -169,6 +159,7 @@ class MainWindow(FramelessMainWindow):
         assert self._vm.reader_vm is not None
 
         self._centre_chapter_list = ChapterListPane(self._vm.chapter_list_vm)
+        self._centre_chapter_list.add_chapters_requested.connect(self.open_batch_input)
         self._centre_stack.addWidget(self._centre_chapter_list)
         self._centre_stack.setCurrentWidget(self._centre_chapter_list)
 
@@ -184,9 +175,7 @@ class MainWindow(FramelessMainWindow):
         )
         self._vm.reader_vm.view_mode_changed.connect(self._on_view_mode_changed)
 
-        title = f"Chapter Extractor — {project.name}"
-        self.setWindowTitle(title)
-        self._titlebar.set_title(title)
+        self.setWindowTitle(f"Chapter Extractor — {project.name}")
 
     def _teardown_project_panes(self) -> None:
         if self._window_manager is not None:
@@ -247,21 +236,32 @@ class MainWindow(FramelessMainWindow):
             self._vm.reader_vm.exit_to_default()
 
     def _on_view_mode_changed(self, mode: ViewMode) -> None:
-        # FOCUS hides sidebar+list; DISTRACTION_FREE additionally hides reader actions.
+        # DEFAULT  : everything visible
+        # FOCUS    : sidebar + list collapsed; menu/status/reader-actions stay
+        # DF       : ONLY the reader text remains — menu, status, reader
+        #            actions, sidebar and list all hidden + fullscreen
+        menu_bar = self.menuBar()
+        status_bar = self.statusBar()
         if mode == ViewMode.DEFAULT:
             self._sidebar.show()
             self._centre_stack.show()
+            menu_bar.show()
+            status_bar.show()
             if self._reader_pane is not None:
                 self._reader_pane.set_actions_visible(True)
             self.showNormal()
         elif mode == ViewMode.FOCUS:
             self._sidebar.hide()
             self._centre_stack.hide()
+            menu_bar.show()
+            status_bar.show()
             if self._reader_pane is not None:
                 self._reader_pane.set_actions_visible(True)
         elif mode == ViewMode.DISTRACTION_FREE:
             self._sidebar.hide()
             self._centre_stack.hide()
+            menu_bar.hide()
+            status_bar.hide()
             if self._reader_pane is not None:
                 self._reader_pane.set_actions_visible(False)
             self.showFullScreen()

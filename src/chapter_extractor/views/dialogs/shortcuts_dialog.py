@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QHeaderView,
     QLabel,
     QLineEdit,
@@ -64,6 +65,7 @@ class ShortcutsDialog(QDialog):
         self._tree.setUniformRowHeights(True)
         self._tree.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self._tree.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._tree.setFrameShape(QFrame.Shape.NoFrame)
         header_view = self._tree.header()
         header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)

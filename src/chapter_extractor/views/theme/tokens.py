@@ -51,16 +51,22 @@ class ColorTokens:
 
 @dataclass(frozen=True, slots=True)
 class SizingTokens:
-    """Dimensional tokens — all multiples of an 8px grid."""
+    """Dimensional tokens — all multiples of an 8px grid.
+
+    Raycast/Arc lean on generous radii (12px standard) and a slightly
+    taller hit-area for inputs/buttons (36–40px) so the UI breathes.
+    """
 
     grid: int = 8
-    radius_sm: int = 4
-    radius_md: int = 8
-    radius_lg: int = 12
+    radius_sm: int = 6
+    radius_md: int = 10
+    radius_lg: int = 14
+    radius_xl: int = 18
     border_width: int = 1
+    pane_padding: int = 24
     titlebar_height: int = 36
-    button_height: int = 32
-    input_height: int = 36
+    button_height: int = 36
+    input_height: int = 40
 
 
 @dataclass(frozen=True, slots=True)
