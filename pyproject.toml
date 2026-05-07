@@ -19,7 +19,12 @@ dev = [
     "pytest>=8",
     "pytest-qt>=4.4",
     "ruff>=0.6",
+    "nuitka>=2.4",
+    "pillow>=10",  # icon generation in CI / regen scripts
 ]
+
+[project.gui-scripts]
+chapter-extractor = "chapter_extractor.views.application:main"
 
 [project.scripts]
 chapter-extractor = "chapter_extractor.__main__:main"
