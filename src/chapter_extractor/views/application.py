@@ -28,6 +28,11 @@ class Application:
 
     def run(self) -> int:
         self._qapp = QApplication.instance() or QApplication(self._argv)
+        # Force-configure ORM mappers before any query runs. Required for
+        # Nuitka-compiled builds where lazy mapper configuration races the
+        # bootstrap import sequence (see services/db/orm_base.py).
+        from chapter_extractor.services.db.orm_base import configure_all_mappers
+        configure_all_mappers()
         self._ctx = AppContext.bootstrap()
         self._theme = ThemeManager(self._qapp, self._ctx.settings)
         self._theme.apply_current()

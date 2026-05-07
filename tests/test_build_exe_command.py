@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import platform
-import sys
 from pathlib import Path
 
-from scripts.build_exe import BuildPaths, ExeBuilder, NuitkaCommand
+from scripts.build_exe import BuildPaths, ExeBuilder, NuitkaCommand, PythonInterpreter
 
 
 class TestBuildPaths:
@@ -27,7 +26,9 @@ class TestNuitkaCommand:
     def test_argv_includes_required_flags(self, tmp_path: Path) -> None:
         cmd = NuitkaCommand(paths=self._paths(tmp_path))
         argv = cmd.build_argv()
-        assert sys.executable in argv
+        # First entries are the resolved Python interpreter (may be `py -3.13`
+        # or the current sys.executable depending on what's installed).
+        assert len(argv) > 1
         assert "--onefile" in argv
         assert "--standalone" in argv
         assert "--enable-plugin=pyside6" in argv
@@ -46,6 +47,13 @@ class TestNuitkaCommand:
             return
         argv = NuitkaCommand(paths=self._paths(tmp_path)).build_argv()
         assert "--windows-console-mode=disable" in argv
+
+
+class TestPythonInterpreter:
+    def test_resolve_returns_at_least_one_element(self) -> None:
+        argv = PythonInterpreter.resolve()
+        assert len(argv) >= 1
+        assert all(isinstance(a, str) for a in argv)
 
 
 class TestExeBuilderValidation:
