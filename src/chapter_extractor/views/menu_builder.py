@@ -54,11 +54,18 @@ class MenuBuilder:
 
     def _make_action(self, spec: ShortcutSpec, handler: Callable[[], None]) -> QAction:
         action = QAction(spec.label, self._window)
-        action.setShortcut(QKeySequence(spec.key_sequence))
+        # QAction.setShortcuts (plural) accepts a list of QKeySequence so
+        # multiple equivalent bindings (e.g. Ctrl+/ and F1) all activate it.
+        action.setShortcuts([QKeySequence(seq) for seq in spec.all_key_sequences])
         action.setStatusTip(spec.status_tip)
-        action.setToolTip(f"{spec.label} ({spec.key_sequence})")
+        action.setToolTip(self._format_tooltip(spec))
         action.triggered.connect(lambda *_: handler())
         return action
+
+    @staticmethod
+    def _format_tooltip(spec: ShortcutSpec) -> str:
+        keys = " or ".join(spec.all_key_sequences)
+        return f"{spec.label} ({keys})"
 
     @staticmethod
     def _menu_label(category: ShortcutCategory) -> str:

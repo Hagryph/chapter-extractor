@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import QSettings, QSize, Qt
-from PySide6.QtWidgets import QMainWindow, QSplitter, QStackedWidget, QWidget
+from PySide6.QtWidgets import QSplitter, QStackedWidget, QWidget
+from qframelesswindow import FramelessMainWindow
 
 from chapter_extractor.domain.enums import ViewMode
 from chapter_extractor.domain.models import Project
@@ -18,6 +21,7 @@ from chapter_extractor.views.reader_pane import ReaderPane
 from chapter_extractor.views.reader_window import ChapterReaderWindow
 from chapter_extractor.views.sidebar import Sidebar
 from chapter_extractor.views.style import ViewStyle
+from chapter_extractor.views.widgets.app_titlebar import AppTitleBar
 
 
 class _ReaderWindowFactory:
@@ -39,9 +43,14 @@ class _ReaderWindowFactory:
         return ChapterReaderWindow(chapter_id, repo, ctx.clipboard)
 
 
-class MainWindow(QMainWindow):
+class MainWindow(FramelessMainWindow):
     """Top-level application window — three-pane master-detail with focus
     modes, pop-out windows, batch input, and trash dialogs.
+
+    Frameless via ``qframelesswindow.FramelessMainWindow`` so we ship a
+    custom titlebar (AppTitleBar) alongside the menu bar. Native window
+    behaviours (drag, resize, snap layout on Win11, double-click maximize)
+    stay intact via the library's win32 hooks.
 
     Persistence: window geometry, window state, and splitter sizes are
     restored from QSettings on construction and saved on closeEvent.
@@ -57,6 +66,14 @@ class MainWindow(QMainWindow):
         self._settings = QSettings(self.SETTINGS_ORG, self.SETTINGS_APP)
         self.setWindowTitle("Chapter Extractor")
         self.setMinimumSize(QSize(900, 560))
+
+        # Custom titlebar — must be set before _build_ui so the menu bar
+        # lands beneath it.
+        repo_root = Path(__file__).resolve().parents[3]
+        icon_path = repo_root / "assets" / "app.ico"
+        self._titlebar = AppTitleBar(self, str(icon_path) if icon_path.exists() else None)
+        self._titlebar.set_title("Chapter Extractor")
+        self.setTitleBar(self._titlebar)
 
         self._build_ui()
         self._build_menu_and_actions()
@@ -79,12 +96,14 @@ class MainWindow(QMainWindow):
         self._sidebar.setMinimumWidth(ViewStyle.SIDEBAR_MIN)
 
         self._centre_stack = QStackedWidget()
+        self._centre_stack.setProperty("role", "pane")
         self._centre_stack.setMinimumWidth(ViewStyle.LIST_MIN)
         self._centre_empty = EmptyStateWidget("No project open.")
         self._centre_stack.addWidget(self._centre_empty)
         self._centre_chapter_list: ChapterListPane | None = None
 
         self._reader_stack = QStackedWidget()
+        self._reader_stack.setProperty("role", "reader")
         self._reader_stack.setMinimumWidth(ViewStyle.READER_MIN)
         self._reader_empty = EmptyStateWidget("Select a project to start reading.")
         self._reader_stack.addWidget(self._reader_empty)
@@ -142,6 +161,7 @@ class MainWindow(QMainWindow):
             self._centre_stack.setCurrentWidget(self._centre_empty)
             self._reader_stack.setCurrentWidget(self._reader_empty)
             self.setWindowTitle("Chapter Extractor")
+            self._titlebar.set_title("Chapter Extractor")
             self._window_manager = None
             return
 
@@ -164,7 +184,9 @@ class MainWindow(QMainWindow):
         )
         self._vm.reader_vm.view_mode_changed.connect(self._on_view_mode_changed)
 
-        self.setWindowTitle(f"Chapter Extractor — {project.name}")
+        title = f"Chapter Extractor — {project.name}"
+        self.setWindowTitle(title)
+        self._titlebar.set_title(title)
 
     def _teardown_project_panes(self) -> None:
         if self._window_manager is not None:

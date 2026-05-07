@@ -93,7 +93,9 @@ class ShortcutsDialog(QDialog):
             self._add_shortcut_row(spec)
 
     def _add_shortcut_row(self, spec: ShortcutSpec) -> None:
-        row = QTreeWidgetItem([spec.label, self._format_shortcut(spec.key_sequence)])
+        # Render every binding (primary + alternates) joined with "  or  ".
+        keys_text = "  or  ".join(self._format_shortcut(k) for k in spec.all_key_sequences)
+        row = QTreeWidgetItem([spec.label, keys_text])
         row.setToolTip(0, spec.status_tip)
         # Use a monospace-ish font for the shortcut column for alignment.
         f = QFont()
