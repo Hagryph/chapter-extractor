@@ -30,14 +30,7 @@ export class MainWindow {
       minHeight: MainWindow.MIN_HEIGHT,
       show: false,
       frame: false,
-      // Transparent + frameless so the CSS border-radius on the root
-      // actually rounds the window silhouette (Win11 native rounded
-      // corners cap at ~8px; we want 24px to match the reference). The
-      // body inside paints solid #090909 so no desktop bleeds through —
-      // only the four rounded corner cut-outs are transparent.
-      transparent: true,
-      backgroundColor: '#00000000',
-      hasShadow: true,
+      backgroundColor: '#090909',
       titleBarStyle: 'hiddenInset',
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
