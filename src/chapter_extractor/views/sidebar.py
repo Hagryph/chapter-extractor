@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QFileDialog,
-    QInputDialog,
+    QFrame,
     QLabel,
     QListWidget,
     QListWidgetItem,
@@ -58,6 +55,7 @@ class Sidebar(QWidget):
         self._list = QListWidget()
         self._list.setSelectionMode(self._list.SelectionMode.SingleSelection)
         self._list.setUniformItemSizes(True)
+        self._list.setFrameShape(QFrame.Shape.NoFrame)
         self._list.itemDoubleClicked.connect(self._on_open_clicked)
         outer.addWidget(self._list, stretch=1)
 
@@ -105,19 +103,16 @@ class Sidebar(QWidget):
         self._vm.open(summary)
 
     def _on_new_clicked(self) -> None:
-        name, ok = QInputDialog.getText(self, "New Project", "Project name:")
-        if not ok or not name.strip():
-            return
-        default_root = self._ctx.paths.project_root(name.strip())
-        chosen = QFileDialog.getExistingDirectory(
-            self,
-            "Choose folder for project",
-            str(default_root.parent),
-            options=QFileDialog.Option.ShowDirsOnly,
+        from chapter_extractor.views.dialogs.new_project_dialog import (
+            NewProjectDialog,
         )
-        root = Path(chosen) / name.strip() if chosen else default_root
+
+        dialog = NewProjectDialog(self._ctx.paths, parent=self)
+        if dialog.exec() != NewProjectDialog.DialogCode.Accepted:
+            return
+        root = dialog.project_root
         root.mkdir(parents=True, exist_ok=True)
-        self._vm.create(name.strip(), root)
+        self._vm.create(dialog.project_name, root)
 
     def _on_theme_clicked(self) -> None:
         order = [ThemeMode.AUTO, ThemeMode.LIGHT, ThemeMode.DARK]

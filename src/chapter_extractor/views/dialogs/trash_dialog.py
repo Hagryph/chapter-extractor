@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -49,7 +50,7 @@ class TrashDialog(QDialog):
         outer.addWidget(retention_lbl)
 
         self._list = QListWidget()
-        self._list.setAlternatingRowColors(True)
+        self._list.setFrameShape(QFrame.Shape.NoFrame)
         outer.addWidget(self._list, stretch=1)
 
         actions = QHBoxLayout()

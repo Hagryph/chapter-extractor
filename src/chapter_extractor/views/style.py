@@ -18,8 +18,8 @@ class ViewStyle:
     READER_MIN = 480
 
     # Internal padding inside each pane.
-    PANE_PADDING = 16
-    READER_INNER_PADDING = 24
+    PANE_PADDING = 24
+    READER_INNER_PADDING = 32
 
     # Typography defaults (mirrored in ReaderViewModel).
     DEFAULT_FONT_FAMILY = "Segoe UI, Inter, -apple-system, sans-serif"
