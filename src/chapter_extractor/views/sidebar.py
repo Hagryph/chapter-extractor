@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QFileDialog,
+    QInputDialog,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+from chapter_extractor.domain.enums import ThemeMode
+from chapter_extractor.domain.models import ProjectSummary
+from chapter_extractor.infrastructure.app_context import AppContext
+from chapter_extractor.viewmodels.project_list_vm import ProjectListViewModel
+from chapter_extractor.views.style import ViewStyle
+
+
+class Sidebar(QWidget):
+    """Left pane: project switcher.
+
+    A QListWidget shows known projects (most-recent first; pinned float to top).
+    Buttons below: New Project, Theme toggle. Settings button reserved.
+    """
+
+    def __init__(self, vm: ProjectListViewModel, ctx: AppContext) -> None:
+        super().__init__()
+        self._vm = vm
+        self._ctx = ctx
+        self._build_ui()
+        self._wire_signals()
+        self._refresh()
+
+    def _build_ui(self) -> None:
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(
+            ViewStyle.PANE_PADDING,
+            ViewStyle.PANE_PADDING,
+            ViewStyle.PANE_PADDING,
+            ViewStyle.PANE_PADDING,
+        )
+        outer.setSpacing(ViewStyle.GRID)
+
+        title = QLabel("Projects")
+        title_font = title.font()
+        title_font.setBold(True)
+        title_font.setPointSize(title_font.pointSize() + 1)
+        title.setFont(title_font)
+        outer.addWidget(title)
+
+        self._list = QListWidget()
+        self._list.setSelectionMode(self._list.SelectionMode.SingleSelection)
+        self._list.setUniformItemSizes(True)
+        self._list.itemDoubleClicked.connect(self._on_open_clicked)
+        outer.addWidget(self._list, stretch=1)
+
+        self._open_btn = QPushButton("Open")
+        self._open_btn.setEnabled(False)
+        self._open_btn.clicked.connect(self._on_open_clicked)
+        outer.addWidget(self._open_btn)
+
+        self._new_btn = QPushButton("+ New Project")
+        self._new_btn.clicked.connect(self._on_new_clicked)
+        outer.addWidget(self._new_btn)
+
+        outer.addSpacing(ViewStyle.GRID)
+
+        self._theme_btn = QPushButton(self._theme_label())
+        self._theme_btn.clicked.connect(self._on_theme_clicked)
+        outer.addWidget(self._theme_btn)
+
+    def _wire_signals(self) -> None:
+        self._vm.projects_changed.connect(self._refresh)
+        self._list.currentItemChanged.connect(self._on_selection_changed)
+
+    # ─── Slots ──────────────────────────────────────────────────
+
+    def _refresh(self) -> None:
+        self._list.clear()
+        for s in self._vm.projects:
+            item = QListWidgetItem(self._format_summary(s))
+            item.setData(Qt.ItemDataRole.UserRole, s)
+            self._list.addItem(item)
+
+    def _on_selection_changed(
+        self, current: QListWidgetItem | None, previous: QListWidgetItem | None
+    ) -> None:
+        del previous
+        self._open_btn.setEnabled(current is not None)
+
+    def _on_open_clicked(self, *_: object) -> None:
+        item = self._list.currentItem()
+        if item is None:
+            return
+        summary: ProjectSummary = item.data(Qt.ItemDataRole.UserRole)
+        self._vm.open(summary)
+
+    def _on_new_clicked(self) -> None:
+        name, ok = QInputDialog.getText(self, "New Project", "Project name:")
+        if not ok or not name.strip():
+            return
+        default_root = self._ctx.paths.project_root(name.strip())
+        chosen = QFileDialog.getExistingDirectory(
+            self,
+            "Choose folder for project",
+            str(default_root.parent),
+            options=QFileDialog.Option.ShowDirsOnly,
+        )
+        root = Path(chosen) / name.strip() if chosen else default_root
+        root.mkdir(parents=True, exist_ok=True)
+        self._vm.create(name.strip(), root)
+
+    def _on_theme_clicked(self) -> None:
+        order = [ThemeMode.AUTO, ThemeMode.LIGHT, ThemeMode.DARK]
+        current = self._ctx.settings.theme_mode
+        nxt = order[(order.index(current) + 1) % len(order)]
+        self._ctx.settings.set_theme_mode(nxt)
+        self._theme_btn.setText(self._theme_label())
+
+    # ─── Helpers ────────────────────────────────────────────────
+
+    def _theme_label(self) -> str:
+        labels = {
+            ThemeMode.AUTO: "Theme: Auto",
+            ThemeMode.LIGHT: "Theme: Light",
+            ThemeMode.DARK: "Theme: Dark",
+        }
+        return labels[self._ctx.settings.theme_mode]
+
+    @staticmethod
+    def _format_summary(s: ProjectSummary) -> str:
+        prefix = "📌 " if s.pinned else ""
+        return f"{prefix}{s.name}"
