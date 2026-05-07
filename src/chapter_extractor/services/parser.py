@@ -36,9 +36,17 @@ class ChapterParser:
         re.MULTILINE | re.VERBOSE | re.IGNORECASE,
     )
     _SEPARATOR_RE = re.compile(r"^\s*\.\s*\.\s*\.\s*$", re.MULTILINE)
+    # Matches the trailing author's note block in any common short-form:
+    #   (Author's Note ...), (Authors Note ...), (AN ...), (A/N ...), (A.N. ...)
     _AUTHOR_NOTE_RE = re.compile(
-        r"\(Author'?s\s+Note\b(?P<inner>.*?)\)(?=\s*$)",
-        re.DOTALL | re.IGNORECASE,
+        r"""
+        \(\s*
+        (?: Author'?s\s+Note | A\s*/\s*N | A\.\s*N\.? | AN )
+        \b(?P<inner>.*?)
+        \)
+        (?=\s*$)
+        """,
+        re.DOTALL | re.IGNORECASE | re.VERBOSE,
     )
     _BLANK_LINES_RE = re.compile(r"\n{3,}")
 

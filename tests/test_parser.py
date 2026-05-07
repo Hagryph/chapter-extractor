@@ -102,6 +102,31 @@ class TestChapterParserAuthorNotes:
         assert "A few thoughts on power scaling." in content
         assert "(Author's Note" not in content
 
+    def test_marks_short_form_an_note(self) -> None:
+        text = "Chapter 1: T\nbody\n\n(AN\nshort form note.)\n"
+        content = self.parser.parse(text).chapters[0].content
+        assert "--- Author's Note ---" in content
+        assert "short form note." in content
+        assert "(AN" not in content
+
+    def test_marks_short_form_a_slash_n_note(self) -> None:
+        text = "Chapter 1: T\nbody\n\n(A/N: another way to write it.)\n"
+        content = self.parser.parse(text).chapters[0].content
+        assert "--- Author's Note ---" in content
+        assert "another way to write it." in content
+
+    def test_marks_short_form_a_dot_n_note(self) -> None:
+        text = "Chapter 1: T\nbody\n\n(A.N. dot form.)\n"
+        content = self.parser.parse(text).chapters[0].content
+        assert "--- Author's Note ---" in content
+        assert "dot form." in content
+
+    def test_does_not_mark_random_parens_as_author_note(self) -> None:
+        text = "Chapter 1: T\nHe said (with a smile) hello.\n"
+        content = self.parser.parse(text).chapters[0].content
+        assert "--- Author's Note ---" not in content
+        assert "(with a smile)" in content
+
 
 class TestChapterParserFullBatch:
     """Golden test against a multi-chapter batch resembling real input."""
