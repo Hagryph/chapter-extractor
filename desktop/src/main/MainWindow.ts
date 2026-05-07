@@ -1,7 +1,7 @@
 import { BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
-import { BackdropMaterial, WindowChrome } from './WindowChrome'
+import type { BackdropMaterial } from './WindowChrome'
 
 /**
  * Wraps a single BrowserWindow with our chrome configuration:
@@ -30,10 +30,15 @@ export class MainWindow {
       minHeight: MainWindow.MIN_HEIGHT,
       show: false,
       frame: false,
+      // Transparent + frameless so the CSS border-radius on the root
+      // actually rounds the window silhouette (Win11 native rounded
+      // corners cap at ~8px; we want 24px to match the reference). The
+      // body inside paints solid #090909 so no desktop bleeds through —
+      // only the four rounded corner cut-outs are transparent.
+      transparent: true,
+      backgroundColor: '#00000000',
+      hasShadow: true,
       titleBarStyle: 'hiddenInset',
-      backgroundColor: '#0e0e0f',
-      backgroundMaterial: 'acrylic',
-      roundedCorners: true,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false
@@ -53,7 +58,11 @@ export class MainWindow {
   }
 
   setBackdrop(material: BackdropMaterial): void {
-    WindowChrome.setBackdrop(this.window, material)
+    // No-op now — the window is fully transparent; backgroundMaterial
+    // can't be set on a transparent window. Kept for IPC API stability;
+    // remove when the splash → ready transition no longer references it.
+    void material
+    void this.window
   }
 
   // ── private ──────────────────────────────────────────────────────────
