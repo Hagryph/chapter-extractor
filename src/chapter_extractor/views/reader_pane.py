@@ -62,3 +62,7 @@ class ReaderPane(QWidget):
         self._copy_btn.setEnabled(enabled)
         self._pop_btn.setEnabled(enabled)
         self._focus_btn.setEnabled(enabled)
+
+    def set_actions_visible(self, visible: bool) -> None:
+        """Hide/show the action bar — used by distraction-free mode."""
+        self._copy_btn.parentWidget().setVisible(visible)
