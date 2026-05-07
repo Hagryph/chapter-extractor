@@ -57,11 +57,12 @@ class ChapterListPane(QWidget):
         self._selection_model = self._list.selectionModel()
 
         self._add_btn = QPushButton("+ Add Chapters")
+        self._add_btn.setProperty("primary", True)
         self._add_btn.clicked.connect(self._on_add_clicked)
         outer.addWidget(self._add_btn)
 
         self._count_label = QLabel("0 chapters")
-        self._count_label.setStyleSheet("opacity: 0.6;")
+        self._count_label.setProperty("role", "muted")
         outer.addWidget(self._count_label)
 
     def _wire_signals(self) -> None:

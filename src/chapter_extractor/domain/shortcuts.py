@@ -17,8 +17,10 @@ class ShortcutSpec:
     """Single source of truth for one shortcut.
 
     ``id`` is used by views to look up the spec; ``label`` is what users see;
-    ``key_sequence`` is fed to ``QKeySequence`` (cross-platform); ``status_tip``
-    is the longer description shown in the status bar (per Qt's ``QAction.statusTip``
+    ``key_sequence`` is the primary shortcut fed to ``QKeySequence``;
+    ``alt_key_sequences`` are extra equivalent shortcuts (e.g. ``Ctrl+/`` and
+    ``F1`` both opening the help dialog). ``status_tip`` is the longer
+    description shown in the status bar (per Qt's ``QAction.statusTip``
     convention) and the cheat-sheet help dialog.
     """
 
@@ -27,6 +29,11 @@ class ShortcutSpec:
     category: ShortcutCategory
     key_sequence: str
     status_tip: str
+    alt_key_sequences: tuple[str, ...] = ()
+
+    @property
+    def all_key_sequences(self) -> tuple[str, ...]:
+        return (self.key_sequence, *self.alt_key_sequences)
 
 
 class ShortcutCatalog:
@@ -104,6 +111,7 @@ class ShortcutCatalog:
             label="Keyboard Shortcuts",
             category=ShortcutCategory.HELP,
             key_sequence="Ctrl+/",
+            alt_key_sequences=("F1",),
             status_tip="Show the keyboard shortcut cheat sheet.",
         ),
     )

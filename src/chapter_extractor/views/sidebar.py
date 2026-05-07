@@ -30,6 +30,9 @@ class Sidebar(QWidget):
 
     def __init__(self, vm: ProjectListViewModel, ctx: AppContext) -> None:
         super().__init__()
+        # Tag for global stylesheet — gives the sidebar its own surface
+        # color + right-edge divider via QSS [role="sidebar"] rule.
+        self.setProperty("role", "sidebar")
         self._vm = vm
         self._ctx = ctx
         self._build_ui()
@@ -46,11 +49,10 @@ class Sidebar(QWidget):
         )
         outer.setSpacing(ViewStyle.GRID)
 
+        # Section header — picks up QLabel[role="title"] from the stylesheet
+        # so the visual hierarchy is owned by the theme, not ad-hoc fonts.
         title = QLabel("Projects")
-        title_font = title.font()
-        title_font.setBold(True)
-        title_font.setPointSize(title_font.pointSize() + 1)
-        title.setFont(title_font)
+        title.setProperty("role", "title")
         outer.addWidget(title)
 
         self._list = QListWidget()
@@ -65,6 +67,8 @@ class Sidebar(QWidget):
         outer.addWidget(self._open_btn)
 
         self._new_btn = QPushButton("+ New Project")
+        # Visual emphasis — fills with accent color via QSS [primary="true"].
+        self._new_btn.setProperty("primary", True)
         self._new_btn.clicked.connect(self._on_new_clicked)
         outer.addWidget(self._new_btn)
 

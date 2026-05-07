@@ -13,9 +13,10 @@ class EmptyStateWidget(QWidget):
         layout.setContentsMargins(48, 96, 48, 96)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        # Style picked up from QLabel[role="empty-state"] in the global QSS
+        # (theme-aware text color, no hard-coded opacity).
         label = QLabel(message)
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setStyleSheet("font-size: 15px; opacity: 0.55;")
+        label.setProperty("role", "empty-state")
         label.setWordWrap(True)
-
         layout.addWidget(label)
