@@ -4,35 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chapter-extractor"
-version = "0.1.0"
-description = "Desktop app for extracting batch chapters into individual files."
+version = "0.2.0"
+description = "Backend (parser + storage) for the Chapter Extractor desktop app. UI lives in /desktop (Electron) — added in a follow-up PR."
 requires-python = ">=3.11"
 dependencies = [
     "SQLAlchemy>=2.0",
     "platformdirs>=4.0",
-    "PySide6>=6.7",
 ]
 
 [project.optional-dependencies]
-# pyqtdarktheme not yet on PyPI for Python 3.14; theme.py falls back to a
-# bundled QSS stylesheet when the import fails. Install manually on 3.13:
-#   pip install "chapter-extractor[theme]"
-theme = ["pyqtdarktheme>=2.1"]
 dev = [
     "pytest>=8",
-    "pytest-qt>=4.4",
     "ruff>=0.6",
-    "nuitka>=2.4",
-    "zstandard>=0.22",
-    "ordered-set",
-    "pillow>=10",  # icon generation in CI / regen scripts
 ]
-
-[project.gui-scripts]
-chapter-extractor = "chapter_extractor.views.application:main"
-
-[project.scripts]
-chapter-extractor = "chapter_extractor.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -50,7 +34,3 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM"]
 ignore = ["E501"]
-
-[tool.ruff.lint.per-file-ignores]
-# Qt overrides require camelCase to match the Qt C++ API contract.
-"src/chapter_extractor/viewmodels/*.py" = ["N802"]
