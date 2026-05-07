@@ -10,10 +10,17 @@ Nuitka is the recommended packager for PySide6 single-file builds —
 PyInstaller's ``--onefile`` mode is officially flagged as unable to
 properly deploy Qt plugins. Nuitka's ``--enable-plugin=pyside6`` handles
 that automatically.
+
+Why Python 3.13: Nuitka 4.x only experimentally supports Python 3.14.
+On 3.14 the compiled binary fails to register SQLAlchemy ORM loader
+strategies (``LoaderStrategyException`` at first query). On 3.13 it
+works. We resolve to ``py -3.13`` automatically; install via
+``winget install Python.Python.3.13`` if missing.
 """
 from __future__ import annotations
 
 import platform
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -38,6 +45,48 @@ class BuildPaths:
         )
 
 
+class PythonInterpreter:
+    """Resolves the Python interpreter to use as Nuitka's host.
+
+    On Windows we strongly prefer Python 3.13 because Nuitka 4.x's
+    experimental Python 3.14 support breaks decorator-based registration
+    inside SQLAlchemy. We try ``py -3.13`` first, then any 3.13 on PATH,
+    then fall back to the current interpreter with a warning.
+    """
+
+    PREFERRED_VERSION = "3.13"
+
+    @classmethod
+    def resolve(cls) -> list[str]:
+        # 1) Windows py launcher with explicit version.
+        py_launcher = shutil.which("py")
+        if py_launcher:
+            try:
+                subprocess.check_call(
+                    [py_launcher, f"-{cls.PREFERRED_VERSION}", "-c", "import sys"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                return [py_launcher, f"-{cls.PREFERRED_VERSION}"]
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                pass
+        # 2) python3.13 on PATH (POSIX convention).
+        for candidate in (f"python{cls.PREFERRED_VERSION}", f"python{cls.PREFERRED_VERSION}.exe"):
+            found = shutil.which(candidate)
+            if found:
+                return [found]
+        # 3) Fallback to whatever invoked us.
+        major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
+        if major_minor != cls.PREFERRED_VERSION:
+            sys.stderr.write(
+                f"[build_exe] WARNING: Python {cls.PREFERRED_VERSION} not found; "
+                f"falling back to {major_minor}. Nuitka onefile may fail at runtime "
+                "with SQLAlchemy LoaderStrategyException.\n"
+                f"  Install with: winget install Python.Python.{cls.PREFERRED_VERSION}\n"
+            )
+        return [sys.executable]
+
+
 @dataclass
 class NuitkaCommand:
     """Composes the Nuitka command-line for our specific app.
@@ -49,12 +98,19 @@ class NuitkaCommand:
     paths: BuildPaths
     output_filename: str = "ChapterExtractor.exe"
     extra_packages: list[str] = field(
-        default_factory=lambda: ["chapter_extractor"]
+        default_factory=lambda: [
+            "chapter_extractor",
+            # SQLAlchemy uses dynamic discovery for ORM loader strategies and
+            # dialect drivers (e.g. orm.strategies, dialects.sqlite). Without
+            # forcing the whole package, Nuitka's static import scan misses
+            # them and the EXE crashes with LoaderStrategyException at runtime.
+            "sqlalchemy",
+        ]
     )
 
     def build_argv(self) -> list[str]:
         argv: list[str] = [
-            sys.executable,
+            *PythonInterpreter.resolve(),
             "-m",
             "nuitka",
             "--onefile",
@@ -103,12 +159,19 @@ class ExeBuilder:
             raise FileNotFoundError(
                 f"Entry script not found: {self._paths.entry_script}"
             )
+        # Verify Nuitka is importable from the *target* interpreter, which
+        # may be different from the one running this script.
+        host = PythonInterpreter.resolve()
         try:
-            import nuitka  # noqa: F401
-        except ImportError as exc:
+            subprocess.check_call(
+                [*host, "-c", "import nuitka"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError as exc:
             raise RuntimeError(
-                "Nuitka is not installed. Install with:\n"
-                "  pip install -e .[dev]"
+                f"Nuitka is not installed in {' '.join(host)}.\n"
+                f"  Install with:  {' '.join(host)} -m pip install -e .[dev]"
             ) from exc
 
 
