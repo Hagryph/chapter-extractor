@@ -26,3 +26,27 @@ def registry_engine() -> Iterator[Engine]:
     registry_migrator().apply_all(engine)
     yield engine
     engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def qt_app():
+    """Single QApplication for all Qt-bound tests."""
+    pytest.importorskip("PySide6")
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance() or QApplication([])
+    yield app
+
+
+@pytest.fixture
+def chapter_repo(project_engine: Engine):
+    from chapter_extractor.services.db.chapter_repo import SqlAlchemyChapterRepository
+
+    return SqlAlchemyChapterRepository(project_engine)
+
+
+@pytest.fixture
+def registry(registry_engine: Engine):
+    from chapter_extractor.services.db.registry_repo import SqlAlchemyRegistry
+
+    return SqlAlchemyRegistry(registry_engine)

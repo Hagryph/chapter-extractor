@@ -31,6 +31,10 @@ where = ["src"]
 addopts = ["--import-mode=importlib", "-q"]
 pythonpath = ["src"]
 testpaths = ["tests"]
+filterwarnings = [
+    # PySide6 6.7+ over-eagerly marks these public ProxyModel methods as deprecated.
+    "ignore::DeprecationWarning:chapter_extractor.viewmodels.chapter_filter_proxy",
+]
 
 [tool.ruff]
 line-length = 100
@@ -40,3 +44,7 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Qt overrides require camelCase to match the C++ API.
+"src/chapter_extractor/viewmodels/*.py" = ["N802"]
